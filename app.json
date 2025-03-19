@@ -14,7 +14,11 @@
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Allow WhatsApp Status Viewer to access your photos to save and share status media.",
+        "NSPhotoLibraryAddUsageDescription": "Allow WhatsApp Status Viewer to save status media to your photos."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -24,7 +28,8 @@
       "permissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.MANAGE_EXTERNAL_STORAGE"
+        "android.permission.MANAGE_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_MEDIA_LOCATION"
       ],
       "package": "com.whatsappstatusviewer"
     },

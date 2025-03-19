@@ -1,72 +1,93 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, Pressable, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, ScrollView, Platform } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
-import { Play } from 'lucide-react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import MediaGrid from './MediaGrid';
+import MediaList from './MediaList';
+import MediaViewer from './MediaViewer';
+import type { GridType } from './ViewToggle';
 
 const DEMO_VIDEOS = [
   {
+    id: '1',
+    type: 'video' as const,
+    uri: 'https://assets.mixkit.co/videos/preview/mixkit-tree-with-yellow-flowers-1173-large.mp4',
     thumbnail: 'https://images.unsplash.com/photo-1682687220199-d0124f48f95b?w=500&q=80',
+    timestamp: Date.now() - 1000 * 60 * 60,
     duration: '0:45',
   },
   {
+    id: '2',
+    type: 'video' as const,
+    uri: 'https://assets.mixkit.co/videos/preview/mixkit-young-woman-talking-on-video-call-with-smartphone-6894-large.mp4',
     thumbnail: 'https://images.unsplash.com/photo-1682687220063-4742bd7c98d7?w=500&q=80',
+    timestamp: Date.now(),
     duration: '1:20',
   },
 ];
 
-export default function VideosTab() {
+interface VideosTabProps {
+  gridType: GridType;
+  viewMode?: 'grid' | 'list';
+}
+
+export default function VideosTab({ gridType, viewMode = 'grid' }: VideosTabProps) {
   const { colors } = useTheme();
-  const isIOS = Platform.OS === 'ios';
+  const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+
+  const handleDownload = async (id: string) => {
+    const video = DEMO_VIDEOS.find(v => v.id === id);
+    if (video) {
+      console.log('Downloading:', video.uri);
+    }
+  };
+
+  const handleShare = async (id: string) => {
+    const video = DEMO_VIDEOS.find(v => v.id === id);
+    if (video) {
+      console.log('Sharing:', video.uri);
+    }
+  };
+
+  const handleMediaPress = (id: string) => {
+    const video = DEMO_VIDEOS.find(v => v.id === id);
+    if (video) {
+      setSelectedVideo(video.uri);
+    }
+  };
 
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.content}>
-      {DEMO_VIDEOS.map((video, index) => (
-        <Animated.View
-          key={video.thumbnail}
-          entering={FadeIn.delay(index * 100)}
-          style={[
-            styles.card,
-            {
-              backgroundColor: isIOS ? colors.card : colors.background,
-              ...Platform.select({
-                ios: {
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 8,
-                },
-                android: {
-                  elevation: 4,
-                },
-              }),
-            },
-          ]}>
-          <View style={styles.thumbnailContainer}>
-            <Image source={{ uri: video.thumbnail }} style={styles.thumbnail} />
-            <View style={styles.playButton}>
-              <Play size={24} color="#FFFFFF" />
-            </View>
-            <View style={styles.duration}>
-              <Text style={styles.durationText}>{video.duration}</Text>
-            </View>
-          </View>
-          <View style={styles.actions}>
-            <Pressable
-              style={[styles.button, { backgroundColor: colors.primary }]}
-              android_ripple={{ color: 'rgba(255, 255, 255, 0.2)' }}>
-              <Text style={styles.buttonText}>Download</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.button, { backgroundColor: colors.secondary }]}
-              android_ripple={{ color: 'rgba(255, 255, 255, 0.2)' }}>
-              <Text style={styles.buttonText}>Share</Text>
-            </Pressable>
-          </View>
-        </Animated.View>
-      ))}
+      {viewMode === 'grid' ? (
+        <MediaGrid
+          items={DEMO_VIDEOS}
+          gridType={gridType}
+          onMediaPress={handleMediaPress}
+          onDownload={handleDownload}
+          onShare={handleShare}
+        />
+      ) : (
+        <MediaList
+          items={DEMO_VIDEOS.map(video => ({
+            ...video,
+            timestamp: new Date(video.timestamp).toLocaleTimeString(),
+          }))}
+          onMediaPress={handleMediaPress}
+          onDownload={handleDownload}
+          onShare={handleShare}
+        />
+      )}
+
+      {selectedVideo && (
+        <MediaViewer
+          uri={selectedVideo}
+          type="video"
+          onClose={() => setSelectedVideo(null)}
+          onDownload={() => handleDownload(selectedVideo)}
+          onShare={() => handleShare(selectedVideo)}
+        />
+      )}
     </ScrollView>
   );
 }
@@ -76,62 +97,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 16,
-  },
-  card: {
-    borderRadius: 16,
-    marginBottom: 16,
-    overflow: 'hidden',
-  },
-  thumbnailContainer: {
-    position: 'relative',
-  },
-  thumbnail: {
-    width: '100%',
-    height: 300,
-    resizeMode: 'cover',
-  },
-  playButton: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: [{ translateX: -24 }, { translateY: -24 }],
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  duration: {
-    position: 'absolute',
-    bottom: 8,
-    right: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  durationText: {
-    color: '#FFFFFF',
-    fontFamily: 'Inter_400Regular',
-    fontSize: 12,
-  },
-  actions: {
-    flexDirection: 'row',
-    padding: 16,
-    gap: 12,
-  },
-  button: {
-    flex: 1,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 14,
+    flexGrow: 1,
   },
 });
